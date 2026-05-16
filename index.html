@@ -51,7 +51,6 @@
             margin-top: 4px;
         }
 
-        /* Interactive Multi-State Interface Core */
         .interface-core {
             width: 150px;
             height: 150px;
@@ -86,7 +85,6 @@
             transition: all 0.3s ease;
         }
 
-        /* Dynamic Visual Engine States */
         .listening-state {
             border-color: #ff0055 !important;
             box-shadow: 0 0 30px rgba(255, 0, 85, 0.4);
@@ -108,7 +106,6 @@
             transform: scale(1.2);
         }
 
-        /* Displays */
         .status-bar {
             text-align: center;
             font-size: 0.8rem;
@@ -167,26 +164,26 @@
     <div class="terminal">
         <div class="brand-header">
             <h1>A.K.I.R.A.</h1>
-            <p>DESIGNED BY TREZNOR // ENGINE V4.0</p>
+            <p>DESIGNED BY TREZNOR // STABLE ENGINE V4.2</p>
         </div>
 
         <div class="interface-core" id="master-switch">
             <div class="inner-node"></div>
         </div>
 
-        <div class="status-bar" id="telemetry-log">SYSTEM SECURE // COLD BOOT STATUS</div>
+        <div class="status-bar" id="telemetry-log">SYSTEM SECURE // READY TO BOOT</div>
         
         <div class="display-screen" id="console-stream">
-            "Awaiting system matrix initialization, Sir. Tap the core terminal asset above."
+            "Click the center core to awaken Akira, Sir."
         </div>
 
         <div class="lang-selector">
-            <button class="lang-btn active" onclick="setLanguage('en-US')">EN</button>
-            <button class="lang-btn" onclick="setLanguage('hi-IN')">HI (हिंदी)</button>
-            <button class="lang-btn" onclick="setLanguage('zh-CN')">ZH (中文)</button>
-            <button class="lang-btn" onclick="setLanguage('ja-JP')">JA (日本語)</button>
-            <button class="lang-btn" onclick="setLanguage('ms-MY')">MS (Melayu)</button>
-            <button class="lang-btn" onclick="setLanguage('id-ID')">ID (Indonesia)</button>
+            <button class="lang-btn active" id="btn-en" onclick="setLanguage('en-US')">EN</button>
+            <button class="lang-btn" id="btn-hi" onclick="setLanguage('hi-IN')">HI (हिंदी)</button>
+            <button class="lang-btn" id="btn-zh" onclick="setLanguage('zh-CN')">ZH (中文)</button>
+            <button class="lang-btn" id="btn-ja" onclick="setLanguage('ja-JP')">JA (日本語)</button>
+            <button class="lang-btn" id="btn-ms" onclick="setLanguage('ms-MY')">MS (Melayu)</button>
+            <button class="lang-btn" id="btn-id" onclick="setLanguage('id-ID')">ID (Indonesia)</button>
         </div>
     </div>
 
@@ -201,9 +198,10 @@
         let akiraEngine;
         let isLive = false;
         let activeLang = 'en-US';
+        let voiceTimeout;
 
         if (!SpeechRecognition) {
-            telemetry.innerText = "HARDWARE EXCEPTION: SPEECH ENGINES DISCONNECTED";
+            telemetry.innerText = "HARDWARE EXCEPTION: ENGINE UNAVAILABLE";
             telemetry.style.color = "#ff0055";
         } else {
             akiraEngine = new SpeechRecognition();
@@ -214,18 +212,17 @@
         function setLanguage(langCode) {
             activeLang = langCode;
             document.querySelectorAll('.lang-btn').forEach(btn => btn.classList.remove('active'));
-            event.target.classList.add('active');
+            document.getElementById(`btn-${langCode.substring(0,2)}`).classList.add('active');
             if (isLive) akiraSpeak(getLocalizedResponse('lang_switch'));
         }
 
-        // Multilingual Response Registry Arrays
         const languagePack = {
             'en-US': {
                 lang_switch: "Language engine adapted to English, Sir.",
                 init: "Akira mainframe active. Ready for your command sequence.",
                 online: "Systems operational. Go ahead.",
-                status: "Mainframe telemetry stable. CPU capacity optimized at 24 percent. Local parameters functional.",
-                error_mic: "Security access block. Microphone hardware authentication denied.",
+                status: "Mainframe telemetry stable. CPU capacity optimized at 24 percent.",
+                error_mic: "Security access block. Microphone authentication denied.",
                 unknown: "Instruction unmapped in local arrays. Forwarding query sequence.",
                 time: () => `The precise timestamp records ${new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}.`,
                 date: () => `Today's localized calendar registers ${new Date().toDateString()}.`
@@ -266,7 +263,7 @@
                 online: "Sistem beroperasi. Sila arahkan, Tuan.",
                 status: "Telemetri sistem stabil. Penggunaan CPU berada pada tahap optimum.",
                 error_mic: "Sekatan akses. Kebenaran mikrofon ditolak.",
-                unknown: "Arahan tidak ditemui dalam rekod pangkalan data.",
+                unknown: "Arahan tidak menemui dalam rekod pangkalan data.",
                 time: () => `Masa semasa menunjukkan pukul ${new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}.`,
                 date: () => `Tarikh hari ini ialah ${new Date().toLocaleDateString('ms-MY')}.`
             },
@@ -287,31 +284,50 @@
             return typeof pack[key] === 'function' ? pack[key]() : pack[key];
         }
 
-        // Voice Engine Output Processor
+        // Robust Voice Output Controller
         function akiraSpeak(phrase) {
-            if (SpeechSynthesis) SpeechSynthesis.cancel();
+            clearTimeout(voiceTimeout);
+            
+            // Turn off microphone capture during speech processing
+            try { akiraEngine.stop(); } catch(e) {}
 
             masterSwitch.className = "interface-core speaking-state";
             telemetry.innerText = "AKIRA RESPONDING...";
+            consoleStream.innerText = phrase;
 
             if (SpeechSynthesis) {
+                // Bug fix: Clean out active queue lockups
+                SpeechSynthesis.cancel(); 
+
                 const speechNode = new SpeechSynthesisUtterance(phrase);
                 speechNode.lang = activeLang;
-                
-                // Fine-tune tone architectures for dynamic voice profiles
-                speechNode.pitch = activeLang === 'en-US' ? 0.75 : 1.0; 
-                speechNode.rate = 0.98;
+                speechNode.pitch = activeLang === 'en-US' ? 0.80 : 1.0; 
+                speechNode.rate = 1.0;
+
+                // Absolute Emergency Reset: Chrome can fail to fire onend
+                voiceTimeout = setTimeout(() => {
+                    handleSpeechFinished();
+                }, (phrase.length * 90) + 1000); 
 
                 speechNode.onend = () => {
-                    masterSwitch.className = "interface-core";
-                    if (isLive) listenLoop();
+                    clearTimeout(voiceTimeout);
+                    handleSpeechFinished();
                 };
+
+                speechNode.onerror = () => {
+                    clearTimeout(voiceTimeout);
+                    handleSpeechFinished();
+                };
+
                 SpeechSynthesis.speak(speechNode);
             } else {
-                consoleStream.innerText = phrase;
-                masterSwitch.className = "interface-core";
-                if (isLive) listenLoop();
+                setTimeout(handleSpeechFinished, 2000);
             }
+        }
+
+        function handleSpeechFinished() {
+            masterSwitch.className = "interface-core";
+            if (isLive) listenLoop();
         }
 
         function listenLoop() {
@@ -320,18 +336,24 @@
             try { akiraEngine.start(); } catch(e) {}
         }
 
-        // Toggle Terminal Active Matrix
         masterSwitch.addEventListener('click', () => {
             if (!akiraEngine) return;
             if (!isLive) {
                 isLive = true;
-                akiraSpeak(getLocalizedResponse('init'));
+                // Pre-warm the voice subsystem
+                if (SpeechSynthesis) {
+                    SpeechSynthesis.cancel();
+                    const preWarm = new SpeechSynthesisUtterance("");
+                    SpeechSynthesis.speak(preWarm);
+                }
+                setTimeout(() => { akiraSpeak(getLocalizedResponse('init')); }, 100);
             } else {
                 isLive = false;
+                clearTimeout(voiceTimeout);
                 if (SpeechSynthesis) SpeechSynthesis.cancel();
                 try { akiraEngine.stop(); } catch(e) {}
                 masterSwitch.className = "interface-core";
-                telemetry.innerText = "SYSTEM SECURE // COLD BOOT STATUS";
+                telemetry.innerText = "SYSTEM SECURE // READY TO BOOT";
                 consoleStream.innerText = '"Offline Module Active."';
             }
         });
@@ -340,7 +362,7 @@
             akiraEngine.onstart = () => {
                 if (isLive) {
                     masterSwitch.className = "interface-core listening-state";
-                    telemetry.innerText = "LISTENING VIA CORE PORT...";
+                    telemetry.innerText = "LISTENING... SPEAK NOW";
                 }
             };
 
@@ -350,12 +372,17 @@
                     isLive = false;
                     masterSwitch.className = "interface-core";
                 }
-                if (err.error === 'no-speech' && isLive) listenLoop();
+                if (err.error === 'no-speech' && isLive) {
+                    listenLoop();
+                }
             };
 
             akiraEngine.onend = () => {
-                masterSwitch.className = "interface-core";
-                setTimeout(() => { if (isLive && !SpeechSynthesis.speaking) listenLoop(); }, 400);
+                // If speech engine isn't currently outputting audio, open microphone channel
+                if (isLive && !masterSwitch.classList.contains('speaking-state')) {
+                    masterSwitch.className = "interface-core";
+                    setTimeout(() => { if (isLive) listenLoop(); }, 300);
+                }
             };
 
             akiraEngine.onresult = (event) => {
@@ -365,9 +392,7 @@
             };
         }
 
-        // Comprehensive Massive Command Matrix Parsing Engine
         function parseUnifiedCommandMatrix(cmd) {
-            
             // --- TIME, DATE & SCHEDULING INTERFACES ---
             if (cmd.includes('time') || cmd.includes('समय') || cmd.includes('时间') || cmd.includes('時間') || cmd.includes('jam berapa')) {
                 akiraSpeak(getLocalizedResponse('time'));
@@ -376,27 +401,27 @@
                 akiraSpeak(getLocalizedResponse('date'));
             }
             else if (cmd.includes('alarm')) {
-                akiraSpeak("Setting system alarm. Synchronization mapped to default internal utility clock app.");
+                akiraSpeak("Setting system alarm parameters. Connecting clock routing interfaces.");
                 window.open('https://www.google.com/search?q=set+alarm', '_blank');
             }
             else if (cmd.includes('timer')) {
-                akiraSpeak("Initializing background thread calculation countdown timer module.");
+                akiraSpeak("Initializing background thread countdown timer module.");
                 window.open('https://www.google.com/search?q=set+timer', '_blank');
             }
             else if (cmd.includes('remind') || cmd.includes('reminder') || cmd.includes('याद दिलाना')) {
-                akiraSpeak("Adding telemetry tag alert parameters into your notification logs.");
+                akiraSpeak("Adding telemetry tag alert parameters into your notification registry logs.");
             }
             else if (cmd.includes('schedule') || cmd.includes('meeting')) {
-                akiraSpeak("Opening system architecture calendar database layout to log scheduled event parameters.");
+                akiraSpeak("Opening system architecture calendar layout to log scheduled event parameters.");
                 window.open('https://calendar.google.com', '_blank');
             }
 
-            // --- DEEP DEVICE INFRASTRUCTURE DIAGNOSTICS & ACTIONS ---
+            // --- DEVICE INFRASTRUCTURE DIAGNOSTICS & ACTIONS ---
             else if (cmd.includes('status') || cmd.includes('system check')) {
                 akiraSpeak(getLocalizedResponse('status'));
             }
             else if (cmd.includes('cpu')) {
-                akiraSpeak("Parsing core architectures. CPU resource management allocation reading stable at twenty-four percent execution threads.");
+                akiraSpeak("Parsing thread metrics. CPU capacity optimized at twenty-four percent execution streams.");
             }
             else if (cmd.includes('battery')) {
                 if (navigator.getBattery) {
@@ -411,20 +436,20 @@
                 akiraSpeak("Internal partition tracking reporting sixty-two gigabytes system block space fully available, Sir.");
             }
             else if (cmd.includes('network speed') || cmd.includes('internet')) {
-                akiraSpeak("Analyzing socket structures. Bandwidth pipeline reporting connection stable with active low latency paths.");
+                akiraSpeak("Analyzing socket structures. Pipeline reporting connection stable with active low latency paths.");
             }
             else if (cmd.includes('memory') || cmd.includes('optimize') || cmd.includes('clean cache') || cmd.includes('background apps')) {
                 if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
                 akiraSpeak("Garbage collection protocols executed. Cache registries cleared and background tasks compressed successfully.");
             }
             else if (cmd.includes('update')) {
-                akiraSpeak("Checking development nodes. Akira is fully deployed under the premium Treznor engine configuration branch v4.0.");
+                akiraSpeak("Akira is fully deployed under the premium Treznor engine configuration branch v4.2.");
             }
             else if (cmd.includes('security') || cmd.includes('scan')) {
                 akiraSpeak("Running structural integrity diagnostic arrays. Firewall layers report absolute security.");
             }
 
-            // --- MEDIA SIMULATION CONTROLS ---
+            // --- MEDIA CONTROLS ---
             else if (cmd.includes('play music') || cmd.includes('song') || cmd.includes('songs') || cmd.includes('lo-fi') || cmd.includes('relaxing') || cmd.includes('workout') || cmd.includes('sad')) {
                 akiraSpeak("Streaming requested auditory track variables via media pipes.");
                 window.open('https://music.youtube.com', '_blank');
@@ -456,7 +481,7 @@
                 akiraSpeak("I am always online, Sir. Let's analyze data algorithms or configure development structures.");
             }
             else if (cmd.includes('know me')) {
-                akiraSpeak("You are the master app developer operating under the core designation Treznor.");
+                akiraSpeak("You are the master developer operating under the core designation Treznor.");
             }
             else if (cmd.includes('created you') || cmd.includes('who made you')) {
                 akiraSpeak("I was meticulously designed and brought online by Treznor.");
@@ -573,7 +598,7 @@
                 akiraSpeak("Affirmative, Sir. Standing by on all interface endpoints.");
             }
             
-            // --- CATCH-ALL QUERY ENGINE DELAY ---
+            // --- CATCH-ALL QUERY ENGINE ---
             else {
                 akiraSpeak(getLocalizedResponse('unknown'));
                 window.open(`https://www.google.com/search?q=${encodeURIComponent(cmd)}`, '_blank');
