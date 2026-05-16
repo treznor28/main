@@ -1,1 +1,319 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JARVIS AI Voice Terminal</title>
+    <style>
+        * { box-sizing: border-box; }
+        body {
+            background-color: #030712;
+            color: #89E900; /* Neon Green Accent */
+            font-family: 'Courier New', Courier, monospace;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            overflow: hidden;
+        }
+
+        .terminal-container {
+            text-align: center;
+            width: 100%;
+            max-width: 500px;
+            padding: 20px;
+        }
+
+        /* Arc Reactor Core Interface */
+        .reactor-ring {
+            width: 180px;
+            height: 180px;
+            border-radius: 50%;
+            border: 2px dashed #89E900;
+            margin: 0 auto 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            cursor: pointer;
+            box-shadow: 0 0 15px rgba(137, 233, 0, 0.2);
+            transition: all 0.4s ease;
+            animation: rotateRing 20s linear infinite;
+        }
+
+        .reactor-core {
+            width: 90px;
+            height: 90px;
+            border-radius: 50%;
+            background: radial-gradient(circle, #ffffff 0%, #89E900 80%);
+            box-shadow: 0 0 25px #89E900;
+            transition: transform 0.3s ease, background 0.3s ease;
+            animation: pulseCore 2s infinite alternate;
+        }
+
+        /* State Changes */
+        .active-listening {
+            border-color: #ff3366 !important;
+            box-shadow: 0 0 25px rgba(255, 51, 102, 0.6);
+            animation: rotateRing 4s linear infinite;
+        }
+        .active-listening .reactor-core {
+            background: radial-gradient(circle, #ffffff 0%, #ff3366 80%);
+            box-shadow: 0 0 35px #ff3366;
+        }
+
+        .active-speaking {
+            border-color: #00e5ff !important;
+            box-shadow: 0 0 25px rgba(0, 229, 255, 0.6);
+        }
+        .active-speaking .reactor-core {
+            background: radial-gradient(circle, #ffffff 0%, #00e5ff 80%);
+            box-shadow: 0 0 35px #00e5ff;
+            transform: scale(1.15);
+        }
+
+        /* Console Typography */
+        h1 {
+            font-size: 1.8rem;
+            letter-spacing: 4px;
+            margin: 5px 0;
+            text-shadow: 0 0 8px rgba(137, 233, 0, 0.5);
+        }
+
+        #status-log {
+            color: #4b5563;
+            font-size: 0.8rem;
+            margin-bottom: 25px;
+            letter-spacing: 1px;
+        }
+
+        #dialogue-output {
+            background: rgba(137, 233, 0, 0.03);
+            border: 1px solid rgba(137, 233, 0, 0.15);
+            padding: 18px;
+            border-radius: 4px;
+            min-height: 70px;
+            font-size: 0.95rem;
+            line-height: 1.4;
+            color: #e5e7eb;
+        }
+
+        .error-msg {
+            color: #ff3366 !important;
+            border-color: #ff3366 !important;
+        }
+
+        @keyframes rotateRing {
+            100% { transform: rotate(360deg); }
+        }
+        @keyframes pulseCore {
+            0% { transform: scale(0.92); opacity: 0.8; }
+            100% { transform: scale(1.03); opacity: 1; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="terminal-container">
+        <div class="reactor-ring" id="action-trigger">
+            <div class="reactor-core"></div>
+        </div>
+        <h1>J.A.R.V.I.S.</h1>
+        <div id="status-log">SYSTEM SECURE // CLICK CORE TO AWAKEN</div>
+        <div id="dialogue-output">"Initialize my protocols by clicking the interface core, Sir."</div>
+    </div>
+
+    <script>
+        const trigger = document.getElementById('action-trigger');
+        const logDisplay = document.getElementById('status-log');
+        const outputBox = document.getElementById('dialogue-output');
+
+        // Speech Architecture Checking
+        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+        const SpeechSynthesis = window.speechSynthesis;
+
+        let recognitionEngine;
+        let isSystemLive = false;
+
+        if (!SpeechRecognition) {
+            logDisplay.innerText = "CRITICAL ERROR: SPEECH ENGINE UNRESOLVED IN THIS BROWSER";
+            logDisplay.classList.add('error-msg');
+        } else {
+            recognitionEngine = new SpeechRecognition();
+            recognitionEngine.continuous = false; // Processes immediately when speech breaks
+            recognitionEngine.interimResults = false;
+            recognitionEngine.lang = 'en-US';
+        }
+
+        // Master Speech Synthesis Controller (With Failover Setup)
+        function jarvisSpeak(message) {
+            // Cut off speech to accept immediate commands
+            if (SpeechSynthesis) {
+                SpeechSynthesis.cancel();
+            }
+
+            trigger.classList.remove('active-listening');
+            trigger.classList.add('active-speaking');
+            logDisplay.innerText = "JARVIS RESPONDING...";
+
+            if (SpeechSynthesis) {
+                const speechNode = new SpeechSynthesisUtterance(message);
+                const engineVoices = SpeechSynthesis.getVoices();
+                
+                // Select clear British resonance if loaded
+                const pilotVoice = engineVoices.find(v => v.name.includes('Google UK English Male') || v.lang === 'en-GB');
+                if (pilotVoice) speechNode.voice = pilotVoice;
+                
+                speechNode.pitch = 0.88;
+                speechNode.rate = 0.95;
+
+                speechNode.onend = () => {
+                    trigger.classList.remove('active-speaking');
+                    if (isSystemLive) resumeListeningLoop();
+                };
+
+                speechNode.onerror = () => {
+                    executeEmergencyAudioFallback(message);
+                };
+
+                SpeechSynthesis.speak(speechNode);
+            } else {
+                executeEmergencyAudioFallback(message);
+            }
+        }
+
+        // Fallback option using network audio generation if browser TTS fails locally
+        function executeEmergencyAudioFallback(text) {
+            const secureText = encodeURIComponent(text);
+            const fallbackAudio = new Audio(`https://translate.google.com/translate_tts?ie=UTF-8&tl=en&client=tw-ob&q=${secureText}`);
+            
+            fallbackAudio.play().then(() => {
+                fallbackAudio.onended = () => {
+                    trigger.classList.remove('active-speaking');
+                    if (isSystemLive) resumeListeningLoop();
+                };
+            }).catch(err => {
+                console.error("Audio execution denied dynamically:", err);
+                trigger.classList.remove('active-speaking');
+                if (isSystemLive) resumeListeningLoop();
+            });
+        }
+
+        function resumeListeningLoop() {
+            if (!isSystemLive || !recognitionEngine) return;
+            try {
+                recognitionEngine.start();
+            } catch (runtimeError) {
+                // Already capturing
+            }
+        }
+
+        // Interface Execution Trigger
+        trigger.addEventListener('click', () => {
+            if (!recognitionEngine) {
+                alert("This app requires Google Chrome or Microsoft Edge to process voice data.");
+                return;
+            }
+
+            if (!isSystemLive) {
+                isSystemLive = true;
+                // Interaction triggered, safety permissions verified
+                jarvisSpeak("System matrix integration successful. Core online. I am listening, Sir.");
+            } else {
+                isSystemLive = false;
+                if (SpeechSynthesis) SpeechSynthesis.cancel();
+                try { recognitionEngine.stop(); } catch(e) {}
+                trigger.className = "reactor-ring";
+                logDisplay.innerText = "SYSTEM SECURE // CLICK CORE TO AWAKEN";
+                outputBox.innerText = '"Offline State Protocol."';
+            }
+        });
+
+        // Event Listeners for Voice Feed
+        if (recognitionEngine) {
+            recognitionEngine.onstart = () => {
+                if (isSystemLive) {
+                    trigger.classList.remove('active-speaking');
+                    trigger.classList.add('active-listening');
+                    logDisplay.innerText = "STREAMING MIC AUDIO... SPEAK NOW";
+                }
+            };
+
+            recognitionEngine.onerror = (feedError) => {
+                console.warn("Speech recognition error hook: ", feedError.error);
+                
+                if (feedError.error === 'not-allowed') {
+                    logDisplay.innerText = "SECURITY BLOCK: MIC PRIVILEGES DENIED OR LOCAL FILE BLOCKED";
+                    logDisplay.classList.add('error-msg');
+                    outputBox.innerHTML = "<span style='color:#ff3366;'>Browser blocked mic access. Please host this file online (e.g., Netlify, GitHub Pages) or change browser site settings.</span>";
+                    isSystemLive = false;
+                    trigger.className = "reactor-ring";
+                }
+                
+                // If it times out without picking up sounds, loop seamlessly
+                if (feedError.error === 'no-speech' && isSystemLive) {
+                    resumeListeningLoop();
+                }
+            };
+
+            recognitionEngine.onend = () => {
+                trigger.classList.remove('active-listening');
+                // Ensure loop runs continuously if user didn't hit cancel
+                setTimeout(() => {
+                    if (isSystemLive && !SpeechSynthesis.speaking) {
+                        resumeListeningLoop();
+                    }
+                }, 400);
+            };
+
+            recognitionEngine.onresult = (streamData) => {
+                const voiceString = streamData.results[0][0].transcript.toLowerCase().trim();
+                outputBox.innerText = `"${voiceString}"`;
+                evaluateMatrixCommand(voiceString);
+            };
+        }
+
+        // Command Matrix Parsing Engine
+        function evaluateMatrixCommand(input) {
+            if (input.includes('hello') || input.includes('jarvis') || input.includes('wake up')) {
+                jarvisSpeak("Hello Sir. I am tracking operations smoothly.");
+            } 
+            else if (input.includes('status') || input.includes('system check')) {
+                jarvisSpeak("All functional parameters are completely green. Firewalls secure.");
+            } 
+            else if (input.includes('time')) {
+                const currentClock = new Date();
+                const formattedTime = currentClock.toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'});
+                jarvisSpeak(`The terminal timestamp records ${formattedTime}.`);
+            } 
+            else if (input.includes('date') || input.includes('day')) {
+                const calendarDate = new Date().toDateString();
+                jarvisSpeak(`Today is configured as ${calendarDate}.`);
+            }
+            else if (input.includes('open google')) {
+                jarvisSpeak("Initializing browser link to Google server.");
+                window.open('https://www.google.com', '_blank');
+            }
+            else if (input.includes('open youtube')) {
+                jarvisSpeak("Connecting stream array to YouTube.");
+                window.open('https://www.youtube.com', '_blank');
+            }
+            else if (input.includes('terminate') || input.includes('shut down') || input.includes('sleep')) {
+                jarvisSpeak("Entering deep standby matrix. Goodbye Sir.");
+                isSystemLive = false;
+            } 
+            else {
+                jarvisSpeak(`Command acknowledged: ${input}. I currently do not possess data arrays to fulfill this script.`);
+            }
+        }
+
+        // Warm up voices inside the cache buffer
+        if (SpeechSynthesis && SpeechSynthesis.onvoiceschanged !== undefined) {
+            SpeechSynthesis.onvoiceschanged = () => { SpeechSynthesis.getVoices(); };
+        }
+    </script>
+</body>
+</html>
 
