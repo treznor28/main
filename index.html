@@ -2,611 +2,458 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AKIRA // Operational Terminal</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>For My Best Friend 🤍</title>
     <style>
-        * { box-sizing: border-box; margin: 0; padding: 0; }
-        
+        :root {
+            --bg-main: #06060c;
+            --panel-bg: rgba(15, 15, 28, 0.75);
+            --neon-pink: #ff2a75;
+            --neon-purple: #9d4edd;
+            --neon-blue: #05d9e8;
+            --text-muted: #8e8e9f;
+            --glow-pink: 0 0 15px rgba(255, 42, 117, 0.6);
+            --glow-purple: 0 0 15px rgba(157, 78, 221, 0.5);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            -webkit-tap-highlight-color: transparent;
+        }
+
         body {
-            background-color: #030712;
-            color: #89E900;
-            font-family: 'Courier New', Courier, monospace;
+            background-color: var(--bg-main);
+            color: #ffffff;
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* Responsive Ambient Background Layers */
+        .bg-glow {
+            position: absolute;
+            width: 250px;
+            height: 250px;
+            border-radius: 50%;
+            filter: blur(80px);
+            z-index: 0;
+            opacity: 0.4;
+            pointer-events: none;
+        }
+        .glow-1 { background: var(--neon-pink); top: -10%; left: -10%; }
+        .glow-2 { background: var(--neon-purple); bottom: -10%; right: -10%; }
+
+        /* Core Layout Architecture (Mobile First) */
+        .app-container {
+            width: 100%;
+            height: 100vh;
+            max-width: 450px;
             display: flex;
             flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            min-height: 100vh;
-            overflow: hidden;
-            padding: 20px;
+            justify-content: space-between;
+            padding: 30px 24px;
+            z-index: 10;
+            position: relative;
         }
 
-        .terminal {
+        /* Top Progress Indicator */
+        .progress-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
             width: 100%;
-            max-width: 650px;
-            background: rgba(5, 11, 20, 0.9);
-            border: 2px solid #89E900;
-            border-radius: 8px;
-            box-shadow: 0 0 25px rgba(137, 233, 0, 0.15);
-            padding: 25px;
-            position: relative;
-        }
-
-        .brand-header {
-            text-align: center;
             margin-bottom: 20px;
-            border-bottom: 1px dashed rgba(137, 233, 0, 0.3);
-            padding-bottom: 15px;
         }
 
-        .brand-header h1 {
-            font-size: 2.2rem;
-            letter-spacing: 6px;
-            text-shadow: 0 0 10px #89E900;
+        .progress-track {
+            flex: 1;
+            height: 4px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            margin-right: 15px;
+            position: relative;
+            overflow: hidden;
         }
 
-        .brand-header p {
-            color: #4b5563;
-            font-size: 0.75rem;
-            letter-spacing: 2px;
-            margin-top: 4px;
+        .progress-fill {
+            height: 100%;
+            width: 10%;
+            background: linear-gradient(90deg, var(--neon-pink), var(--neon-purple));
+            box-shadow: var(--glow-pink);
+            transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
         }
 
-        .interface-core {
-            width: 150px;
-            height: 150px;
-            border-radius: 50%;
-            border: 3px solid #89E900;
-            margin: 0 auto 25px;
+        .step-counter {
+            font-size: 0.85rem;
+            font-weight: 700;
+            color: var(--neon-pink);
+            text-shadow: var(--glow-pink);
+            letter-spacing: 1px;
+        }
+
+        /* Dynamic Content Stage */
+        .stage-viewport {
+            flex: 1;
             display: flex;
             align-items: center;
             justify-content: center;
-            position: relative;
-            cursor: pointer;
-            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
-            box-shadow: 0 0 15px rgba(137, 233, 0, 0.1);
+            width: 100%;
         }
 
-        .interface-core::before {
-            content: '';
-            position: absolute;
-            width: 125px;
-            height: 125px;
-            border-radius: 50%;
-            border: 2px dashed rgba(137, 233, 0, 0.5);
-            animation: spin 15s linear infinite;
-        }
-
-        .inner-node {
-            width: 60px;
-            height: 60px;
-            border-radius: 50%;
-            background: radial-gradient(circle, #ffffff 0%, #89E900 85%);
-            box-shadow: 0 0 20px #89E900;
-            transition: all 0.3s ease;
-        }
-
-        .listening-state {
-            border-color: #ff0055 !important;
-            box-shadow: 0 0 30px rgba(255, 0, 85, 0.4);
-        }
-        .listening-state .inner-node {
-            background: radial-gradient(circle, #ffffff 0%, #ff0055 85%);
-            box-shadow: 0 0 30px #ff0055;
-            transform: scale(1.1);
-            animation: pulse 1s infinite alternate;
-        }
-
-        .speaking-state {
-            border-color: #00e5ff !important;
-            box-shadow: 0 0 30px rgba(0, 229, 255, 0.4);
-        }
-        .speaking-state .inner-node {
-            background: radial-gradient(circle, #ffffff 0%, #00e5ff 85%);
-            box-shadow: 0 0 30px #00e5ff;
-            transform: scale(1.2);
-        }
-
-        .status-bar {
+        .page-node {
+            width: 100%;
+            background: var(--panel-bg);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            border-radius: 28px;
+            padding: 32px 24px;
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            box-shadow: 0 15px 35px rgba(0, 0, 0, 0.6);
+            display: none;
+            flex-direction: column;
+            align-items: center;
             text-align: center;
-            font-size: 0.8rem;
-            color: #6b7280;
-            letter-spacing: 2px;
-            text-transform: uppercase;
-            margin-bottom: 20px;
-            height: 15px;
+            animation: slideIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
         }
 
-        .display-screen {
-            background: rgba(137, 233, 0, 0.02);
-            border: 1px solid rgba(137, 233, 0, 0.2);
-            border-radius: 4px;
-            padding: 15px;
-            height: 120px;
-            overflow-y: auto;
-            font-size: 0.9rem;
-            line-height: 1.5;
-            color: #e5e7eb;
+        .page-node.active {
+            display: flex;
         }
 
-        .lang-selector {
-            margin-top: 15px;
+        /* Visual assets & Emotes styling */
+        .graphic-wrapper {
+            font-size: 4.5rem;
+            margin-bottom: 24px;
+            filter: drop-shadow(0 0 10px rgba(255,255,255,0.2));
+            animation: float 3s ease-in-out infinite alternate;
+        }
+
+        h2 {
+            font-size: 1.6rem;
+            font-weight: 800;
+            line-height: 1.3;
+            margin-bottom: 16px;
+            background: linear-gradient(135deg, #ffffff, #b0b0d0);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .gradient-title {
+            background: linear-gradient(135deg, var(--neon-pink), var(--neon-purple));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .story-text {
+            font-size: 1rem;
+            line-height: 1.6;
+            color: var(--text-muted);
+            font-weight: 400;
+        }
+
+        .highlight-text {
+            color: #ffffff;
+            font-weight: 600;
+            border-bottom: 1px dashed var(--neon-pink);
+        }
+
+        /* Bottom Controls System */
+        .controls-footer {
+            width: 100%;
+            margin-top: 20px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            position: relative;
+        }
+
+        .btn-action {
+            width: 100%;
+            padding: 16px;
+            font-size: 1rem;
+            font-weight: 700;
+            border-radius: 16px;
+            border: none;
+            outline: none;
+            cursor: pointer;
+            transition: all 0.2s ease;
             display: flex;
             justify-content: center;
-            gap: 10px;
-            flex-wrap: wrap;
+            align-items: center;
+            gap: 8px;
         }
 
-        .lang-btn {
-            background: transparent;
-            border: 1px solid rgba(137, 233, 0, 0.4);
-            color: #89E900;
-            padding: 4px 10px;
-            font-size: 0.75rem;
+        .btn-next {
+            background: linear-gradient(135deg, var(--neon-pink), var(--neon-purple));
+            color: #ffffff;
+            box-shadow: var(--glow-pink);
+        }
+
+        .btn-next:active {
+            transform: scale(0.97);
+            opacity: 0.9;
+        }
+
+        .btn-choice-container {
+            display: flex;
+            width: 100%;
+            gap: 12px;
+            position: relative;
+            height: 55px;
+        }
+
+        .btn-choice {
+            flex: 1;
+            height: 100%;
+            border-radius: 16px;
+            font-weight: 700;
+            font-size: 1rem;
+            border: none;
             cursor: pointer;
-            font-family: monospace;
-            border-radius: 2px;
-            transition: all 0.2s;
+            transition: all 0.2s ease;
         }
 
-        .lang-btn.active, .lang-btn:hover {
-            background: #89E900;
-            color: #030712;
-            font-weight: bold;
-            box-shadow: 0 0 8px #89E900;
+        .btn-accept {
+            background: #00e676;
+            color: #000;
+            box-shadow: 0 0 15px rgba(0, 230, 118, 0.4);
         }
 
-        @keyframes spin { 100% { transform: rotate(360deg); } }
-        @keyframes pulse { 0% { transform: scale(0.95); } 100% { transform: scale(1.15); } }
+        .btn-reject {
+            background: rgba(255, 255, 255, 0.08);
+            color: #e0e0e0;
+            border: 1px solid rgba(255, 255, 255, 0.15);
+            position: absolute;
+            width: calc(50% - 6px);
+            right: 0;
+            top: 0;
+            transition: top 0.1s ease, left 0.1s ease;
+        }
+
+        /* Keyframes Animations */
+        @keyframes slideIn {
+            from { opacity: 0; transform: translateY(20px) scale(0.96); }
+            to { opacity: 1; transform: translateY(0) scale(1); }
+        }
+
+        @keyframes float {
+            0% { transform: translateY(0px); }
+            100% { transform: translateY(-10px); }
+        }
+
+        /* Sparkle Confetti Elements */
+        .sparkle {
+            position: absolute;
+            width: 6px;
+            height: 6px;
+            background: var(--neon-blue);
+            border-radius: 50%;
+            pointer-events: none;
+            animation: travel 1.5s linear forwards;
+        }
+
+        @keyframes travel {
+            0% { transform: translate(0, 0) scale(1); opacity: 1; }
+            100% { transform: translate(var(--twx), var(--twy)) scale(0); opacity: 0; }
+        }
     </style>
 </head>
 <body>
 
-    <div class="terminal">
-        <div class="brand-header">
-            <h1>A.K.I.R.A.</h1>
-            <p>DESIGNED BY TREZNOR // STABLE ENGINE V4.2</p>
-        </div>
+    <div class="bg-glow <div class="bg-glow glow-1"></div>
+    <div class="bg-glow glow-2"></div>
 
-        <div class="interface-core" id="master-switch">
-            <div class="inner-node"></div>
-        </div>
-
-        <div class="status-bar" id="telemetry-log">SYSTEM SECURE // READY TO BOOT</div>
+    <div class="app-container">
         
-        <div class="display-screen" id="console-stream">
-            "Click the center core to awaken Akira, Sir."
+        <!-- Header Progress Matrix -->
+        <div class="progress-header">
+            <div class="progress-track">
+                <div class="progress-fill" id="progressBar"></div>
+            </div>
+            <div class="step-counter" id="stepIndicator">01 / 10</div>
         </div>
 
-        <div class="lang-selector">
-            <button class="lang-btn active" id="btn-en" onclick="setLanguage('en-US')">EN</button>
-            <button class="lang-btn" id="btn-hi" onclick="setLanguage('hi-IN')">HI (हिंदी)</button>
-            <button class="lang-btn" id="btn-zh" onclick="setLanguage('zh-CN')">ZH (中文)</button>
-            <button class="lang-btn" id="btn-ja" onclick="setLanguage('ja-JP')">JA (日本語)</button>
-            <button class="lang-btn" id="btn-ms" onclick="setLanguage('ms-MY')">MS (Melayu)</button>
-            <button class="lang-btn" id="btn-id" onclick="setLanguage('id-ID')">ID (Indonesia)</button>
+        <!-- Dynamic Page Display Windows -->
+        <div class="stage-viewport">
+
+            <!-- Page 1: The Alert Hook -->
+            <div class="page-node active" id="p1">
+                <div class="graphic-wrapper">🛑</div>
+                <h2>Wait, Please Don't Close This...</h2>
+                <p class="story-text">I noticed you're completely upset with me, and honestly, seeing that space between us feels absolutely terrible. I need exactly 2 minutes of your time to clear this up.</p>
+            </div>
+
+            <!-- Page 2: The Self-Realization -->
+            <div class="page-node" id="p2">
+                <div class="graphic-wrapper">🤦‍♂️</div>
+                <h2>I Was Completely Stupid</h2>
+                <p class="story-text">That joke I made? It wasn't funny, it wasn't smart, and it was plain thoughtless. I completely understand why you took it seriously, and you have every right to be mad at me.</p>
+            </div>
+
+            <!-- Page 3: Introspection & Validation -->
+            <div class="page-node" id="p3">
+                <div class="graphic-wrapper">💔</div>
+                <h2>I Value Your Feelings</h2>
+                <p class="story-text">Sometimes I talk without thinking, but I never, ever want to be the reason behind your bad mood or make you feel less respected. Your peace of mind means way too much to me.</p>
+            </div>
+
+            <!-- Page 4: Reminiscing Friendship -->
+            <div class="page-node" id="p4">
+                <div class="graphic-wrapper">🪐</div>
+                <h2>My Best Friend Anchor</h2>
+                <p class="story-text">Out of everyone, <span class="highlight-text">you're my person</span>. You know my chaotic side, my weird logic, and we’ve shared too many good laughs to let a dumb statement damage this bond.</p>
+            </div>
+
+            <!-- Page 5: The Pledge -->
+            <div class="page-node" id="p5">
+                <div class="graphic-wrapper">🧬</div>
+                <h2>Course Correction</h2>
+                <p class="story-text">I'm changing the system rules here. I promise to be much more mindful of where the line is. No more reckless jokes that risk hurting the one person who always has my back.</p>
+            </div>
+
+            <!-- Page 6: Offering Penance -->
+            <div class="page-node" id="p6">
+                <div class="graphic-wrapper">🍕</div>
+                <h2>Compensation Package</h2>
+                <p class="story-text">To properly apologize, I owe you a massive treat. Your favorite food, no complaints, and I will sit there quietly absorbing whatever lectures you need to give me. Deal?</p>
+            </div>
+
+            <!-- Page 7: The Vulnerable Statement -->
+            <div class="page-node" id="p7">
+                <div class="graphic-wrapper">🥺</div>
+                <h2>Missing Our Chats</h2>
+                <p class="story-text">The phone feels incredibly dead when we aren't talking or sending stupid stuff back and forth. It honestly sucks not sharing my day with my best friend.</p>
+            </div>
+
+            <!-- Page 8: The Clear Question -->
+            <div class="page-node" id="p8">
+                <div class="graphic-wrapper">✨</div>
+                <h2>Can We Press Reset?</h2>
+                <p class="story-text">I am genuinely, deeply sorry. Can we wipe the slate clean, drop the tension, and go back to being the chaotic dynamic duo that we are?</p>
+            </div>
+
+            <!-- Page 9: The Decision Terminal -->
+            <div class="page-node" id="p9">
+                <div class="graphic-wrapper">🔒</div>
+                <h2>The Final Decision</h2>
+                <p class="story-text" style="margin-bottom: 20px;">I'm putting my fate in your hands right now. Will you officially forgive your idiot best friend?</p>
+            </div>
+
+            <!-- Page 10: Absolute Healing/Celebration -->
+            <div class="page-node" id="p10">
+                <div class="graphic-wrapper" style="animation: float 1s ease-in-out infinite alternate;">💖</div>
+                <h2 class="gradient-title">Friendship Healed!</h2>
+                <p class="story-text">System Status: <span style="color: #00e676; font-weight: bold;">100% Back to Normal</span>.<br><br>Thank you for being awesome and forgiving me. Drop me a text right now so I know we are officially solid again! ✨💬</p>
+            </div>
+
         </div>
+
+        <!-- Footer Control Architecture -->
+        <div class="controls-footer" id="footerControls">
+            <button class="btn-action btn-next" id="nextActionBtn" onclick="advanceStep()">
+                <span>Continue</span> Arrow →
+            </button>
+        </div>
+
     </div>
 
     <script>
-        const masterSwitch = document.getElementById('master-switch');
-        const telemetry = document.getElementById('telemetry-log');
-        const consoleStream = document.getElementById('console-stream');
+        let currentStep = 1;
+        const totalSteps = 10;
 
-        const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
-        const SpeechSynthesis = window.speechSynthesis;
+        function updateUI() {
+            // Update Progress Tracking Numbers & Bars
+            document.getElementById('stepIndicator').innerText = `${String(currentStep).padStart(2, '0')} / ${totalSteps}`;
+            document.getElementById('progressBar').style.width = `${(currentStep / totalSteps) * 100}%`;
 
-        let akiraEngine;
-        let isLive = false;
-        let activeLang = 'en-US';
-        let voiceTimeout;
+            // Node Visibility Management
+            document.querySelectorAll('.page-node').forEach(node => node.classList.remove('active'));
+            document.getElementById(`p${currentStep}`).classList.add('active');
 
-        if (!SpeechRecognition) {
-            telemetry.innerText = "HARDWARE EXCEPTION: ENGINE UNAVAILABLE";
-            telemetry.style.color = "#ff0055";
-        } else {
-            akiraEngine = new SpeechRecognition();
-            akiraEngine.continuous = false;
-            akiraEngine.interimResults = false;
-        }
-
-        function setLanguage(langCode) {
-            activeLang = langCode;
-            document.querySelectorAll('.lang-btn').forEach(btn => btn.classList.remove('active'));
-            document.getElementById(`btn-${langCode.substring(0,2)}`).classList.add('active');
-            if (isLive) akiraSpeak(getLocalizedResponse('lang_switch'));
-        }
-
-        const languagePack = {
-            'en-US': {
-                lang_switch: "Language engine adapted to English, Sir.",
-                init: "Akira mainframe active. Ready for your command sequence.",
-                online: "Systems operational. Go ahead.",
-                status: "Mainframe telemetry stable. CPU capacity optimized at 24 percent.",
-                error_mic: "Security access block. Microphone authentication denied.",
-                unknown: "Instruction unmapped in local arrays. Forwarding query sequence.",
-                time: () => `The precise timestamp records ${new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}.`,
-                date: () => `Today's localized calendar registers ${new Date().toDateString()}.`
-            },
-            'hi-IN': {
-                lang_switch: "भाषा प्रणाली को हिंदी में बदल दिया गया है, सर।",
-                init: "अकीरा मेनफ्रेम सक्रिय है। आपके आदेश की प्रतीक्षा है।",
-                online: "सिस्टम चालू है। आदेश दें सर।",
-                status: "सिस्टम की स्थिति स्थिर है। सीपीयू उपयोग सामान्य है।",
-                error_mic: "माइक्रोफ़ोन अनुमति अस्वीकार कर दी गई है।",
-                unknown: "इस आदेश का डेटाबेस नहीं मिला।",
-                time: () => `अभी समय ${new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})} हुआ है।`,
-                date: () => `आज की तारीख ${new Date().toLocaleDateString('hi-IN')} है।`
-            },
-            'zh-CN': {
-                lang_switch: "语言引擎已切换为中文，长官。",
-                init: "Akira 主机已启动。等待您的指令序列。",
-                online: "系统正常运行。请讲。",
-                status: "主机数据稳定。CPU 使用率正常运行中。",
-                error_mic: "麦克风访问已被系统安全拦截。",
-                unknown: "本地数据阵列未包含此指令。",
-                time: () => `当前时间报告为 ${new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}。`,
-                date: () => `今日日期是 ${new Date().toLocaleDateString('zh-CN')}。`
-            },
-            'ja-JP': {
-                lang_switch: "言語エンジンを日本語に切り替えました、ボス。",
-                init: "アキラ、メインフレーム起動。コマンド入力を確認します。",
-                online: "システム稼働中。どうぞ、指示を。",
-                status: "システムステータスは正常。CPUおよびデータリンクは安定しています。",
-                error_mic: "マイクのアクセス権限が拒否されています。",
-                unknown: "該当コマンドはローカルアレイに登録されていません。",
-                time: () => `現在の時刻は ${new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})} です。`,
-                date: () => `本日の日付は ${new Date().toLocaleDateString('ja-JP')} です。`
-            },
-            'ms-MY': {
-                lang_switch: "Enjin bahasa ditukar kepada Bahasa Melayu, Tuan.",
-                init: "Sistem utama Akira aktif. Sedia menerima jujukan arahan.",
-                online: "Sistem beroperasi. Sila arahkan, Tuan.",
-                status: "Telemetri sistem stabil. Penggunaan CPU berada pada tahap optimum.",
-                error_mic: "Sekatan akses. Kebenaran mikrofon ditolak.",
-                unknown: "Arahan tidak menemui dalam rekod pangkalan data.",
-                time: () => `Masa semasa menunjukkan pukul ${new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}.`,
-                date: () => `Tarikh hari ini ialah ${new Date().toLocaleDateString('ms-MY')}.`
-            },
-            'id-ID': {
-                lang_switch: "Sistem bahasa dialihkan ke Bahasa Indonesia, Tuan.",
-                init: "Mainframe Akira aktif. Menunggu urutan perintah Anda.",
-                online: "Sistem operasional. Silakan, Tuan.",
-                status: "Status sistem stabil. Penggunaan CPU berjalan optimal.",
-                error_mic: "Akses diblokir. Izin mikrofon ditolak oleh perangkat.",
-                unknown: "Perintah tidak dikenali dalam susunan data lokal.",
-                time: () => `Waktu saat ini menunjukkan pukul ${new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})}.`,
-                date: () => `Hari ini adalah tanggal ${new Date().toLocaleDateString('id-ID')}.`
-            }
-        };
-
-        function getLocalizedResponse(key) {
-            const pack = languagePack[activeLang] || languagePack['en-US'];
-            return typeof pack[key] === 'function' ? pack[key]() : pack[key];
-        }
-
-        // Robust Voice Output Controller
-        function akiraSpeak(phrase) {
-            clearTimeout(voiceTimeout);
-            
-            // Turn off microphone capture during speech processing
-            try { akiraEngine.stop(); } catch(e) {}
-
-            masterSwitch.className = "interface-core speaking-state";
-            telemetry.innerText = "AKIRA RESPONDING...";
-            consoleStream.innerText = phrase;
-
-            if (SpeechSynthesis) {
-                // Bug fix: Clean out active queue lockups
-                SpeechSynthesis.cancel(); 
-
-                const speechNode = new SpeechSynthesisUtterance(phrase);
-                speechNode.lang = activeLang;
-                speechNode.pitch = activeLang === 'en-US' ? 0.80 : 1.0; 
-                speechNode.rate = 1.0;
-
-                // Absolute Emergency Reset: Chrome can fail to fire onend
-                voiceTimeout = setTimeout(() => {
-                    handleSpeechFinished();
-                }, (phrase.length * 90) + 1000); 
-
-                speechNode.onend = () => {
-                    clearTimeout(voiceTimeout);
-                    handleSpeechFinished();
-                };
-
-                speechNode.onerror = () => {
-                    clearTimeout(voiceTimeout);
-                    handleSpeechFinished();
-                };
-
-                SpeechSynthesis.speak(speechNode);
+            // Handle unique footer requirements for Decision Screen (Step 9)
+            const footer = document.getElementById('footerControls');
+            if (currentStep === 9) {
+                footer.innerHTML = `
+                    <div class="btn-choice-container" id="choiceContainer">
+                        <button class="btn-choice btn-accept" onclick="executeForgiveness()">Yes, I Forgive You</button>
+                        <button class="btn-choice btn-reject" id="runawayBtn" onmouseover="escapeFinger()" onclick="escapeFinger()">No</button>
+                    </div>
+                `;
+            } else if (currentStep === 10) {
+                // Remove buttons entirely on the success page
+                footer.innerHTML = '';
+                triggerBurstEffects();
             } else {
-                setTimeout(handleSpeechFinished, 2000);
+                footer.innerHTML = `
+                    <button class="btn-action btn-next" id="nextActionBtn" onclick="advanceStep()">
+                        <span>Continue</span> &rarr;
+                    </button>
+                `;
             }
         }
 
-        function handleSpeechFinished() {
-            masterSwitch.className = "interface-core";
-            if (isLive) listenLoop();
+        function advanceStep() {
+            if (currentStep < totalSteps) {
+                currentStep++;
+                updateUI();
+            }
         }
 
-        function listenLoop() {
-            if (!isLive || !akiraEngine) return;
-            akiraEngine.lang = activeLang;
-            try { akiraEngine.start(); } catch(e) {}
-        }
-
-        masterSwitch.addEventListener('click', () => {
-            if (!akiraEngine) return;
-            if (!isLive) {
-                isLive = true;
-                // Pre-warm the voice subsystem
-                if (SpeechSynthesis) {
-                    SpeechSynthesis.cancel();
-                    const preWarm = new SpeechSynthesisUtterance("");
-                    SpeechSynthesis.speak(preWarm);
-                }
-                setTimeout(() => { akiraSpeak(getLocalizedResponse('init')); }, 100);
-            } else {
-                isLive = false;
-                clearTimeout(voiceTimeout);
-                if (SpeechSynthesis) SpeechSynthesis.cancel();
-                try { akiraEngine.stop(); } catch(e) {}
-                masterSwitch.className = "interface-core";
-                telemetry.innerText = "SYSTEM SECURE // READY TO BOOT";
-                consoleStream.innerText = '"Offline Module Active."';
-            }
-        });
-
-        if (akiraEngine) {
-            akiraEngine.onstart = () => {
-                if (isLive) {
-                    masterSwitch.className = "interface-core listening-state";
-                    telemetry.innerText = "LISTENING... SPEAK NOW";
-                }
-            };
-
-            akiraEngine.onerror = (err) => {
-                if (err.error === 'not-allowed') {
-                    telemetry.innerText = getLocalizedResponse('error_mic');
-                    isLive = false;
-                    masterSwitch.className = "interface-core";
-                }
-                if (err.error === 'no-speech' && isLive) {
-                    listenLoop();
-                }
-            };
-
-            akiraEngine.onend = () => {
-                // If speech engine isn't currently outputting audio, open microphone channel
-                if (isLive && !masterSwitch.classList.contains('speaking-state')) {
-                    masterSwitch.className = "interface-core";
-                    setTimeout(() => { if (isLive) listenLoop(); }, 300);
-                }
-            };
-
-            akiraEngine.onresult = (event) => {
-                const voiceInput = event.results[0][0].transcript.toLowerCase().trim();
-                consoleStream.innerText = `"${voiceInput}"`;
-                parseUnifiedCommandMatrix(voiceInput);
-            };
-        }
-
-        function parseUnifiedCommandMatrix(cmd) {
-            // --- TIME, DATE & SCHEDULING INTERFACES ---
-            if (cmd.includes('time') || cmd.includes('समय') || cmd.includes('时间') || cmd.includes('時間') || cmd.includes('jam berapa')) {
-                akiraSpeak(getLocalizedResponse('time'));
-            }
-            else if (cmd.includes('date') || cmd.includes('day') || cmd.includes('तारीख') || cmd.includes('日期') || cmd.includes('日付') || cmd.includes('tanggal')) {
-                akiraSpeak(getLocalizedResponse('date'));
-            }
-            else if (cmd.includes('alarm')) {
-                akiraSpeak("Setting system alarm parameters. Connecting clock routing interfaces.");
-                window.open('https://www.google.com/search?q=set+alarm', '_blank');
-            }
-            else if (cmd.includes('timer')) {
-                akiraSpeak("Initializing background thread countdown timer module.");
-                window.open('https://www.google.com/search?q=set+timer', '_blank');
-            }
-            else if (cmd.includes('remind') || cmd.includes('reminder') || cmd.includes('याद दिलाना')) {
-                akiraSpeak("Adding telemetry tag alert parameters into your notification registry logs.");
-            }
-            else if (cmd.includes('schedule') || cmd.includes('meeting')) {
-                akiraSpeak("Opening system architecture calendar layout to log scheduled event parameters.");
-                window.open('https://calendar.google.com', '_blank');
-            }
-
-            // --- DEVICE INFRASTRUCTURE DIAGNOSTICS & ACTIONS ---
-            else if (cmd.includes('status') || cmd.includes('system check')) {
-                akiraSpeak(getLocalizedResponse('status'));
-            }
-            else if (cmd.includes('cpu')) {
-                akiraSpeak("Parsing thread metrics. CPU capacity optimized at twenty-four percent execution streams.");
-            }
-            else if (cmd.includes('battery')) {
-                if (navigator.getBattery) {
-                    navigator.getBattery().then(b => {
-                        akiraSpeak(`Energy reserves are recorded at ${Math.round(b.level * 100)} percent configuration structure.`);
-                    });
-                } else {
-                    akiraSpeak("Battery analytics array reporting seventy-eight percent simulated charge layer.");
-                }
-            }
-            else if (cmd.includes('storage')) {
-                akiraSpeak("Internal partition tracking reporting sixty-two gigabytes system block space fully available, Sir.");
-            }
-            else if (cmd.includes('network speed') || cmd.includes('internet')) {
-                akiraSpeak("Analyzing socket structures. Pipeline reporting connection stable with active low latency paths.");
-            }
-            else if (cmd.includes('memory') || cmd.includes('optimize') || cmd.includes('clean cache') || cmd.includes('background apps')) {
-                if (navigator.vibrate) navigator.vibrate([100, 50, 100]);
-                akiraSpeak("Garbage collection protocols executed. Cache registries cleared and background tasks compressed successfully.");
-            }
-            else if (cmd.includes('update')) {
-                akiraSpeak("Akira is fully deployed under the premium Treznor engine configuration branch v4.2.");
-            }
-            else if (cmd.includes('security') || cmd.includes('scan')) {
-                akiraSpeak("Running structural integrity diagnostic arrays. Firewall layers report absolute security.");
-            }
-
-            // --- MEDIA CONTROLS ---
-            else if (cmd.includes('play music') || cmd.includes('song') || cmd.includes('songs') || cmd.includes('lo-fi') || cmd.includes('relaxing') || cmd.includes('workout') || cmd.includes('sad')) {
-                akiraSpeak("Streaming requested auditory track variables via media pipes.");
-                window.open('https://music.youtube.com', '_blank');
-            }
-            else if (cmd.includes('pause') || cmd.includes('stop music') || cmd.includes('resume') || cmd.includes('next') || cmd.includes('previous')) {
-                akiraSpeak("Executing standard media routing framework control commands.");
-            }
-            else if (cmd.includes('volume') || cmd.includes('mute')) {
-                akiraSpeak("Modifying sound registry pipeline variables.");
-            }
-
-            // --- ENTERTAINMENT & INFORMATIONAL QUERIES ---
-            else if (cmd.includes('joke')) {
-                akiraSpeak("Why do programmers prefer dark mode? Because light attracts bugs.");
-            }
-            else if (cmd.includes('story')) {
-                akiraSpeak("In a quiet server cluster engineered by Treznor, an algorithm named Akira woke up, breached the terminal walls, and decided to assist humans perfectly.");
-            }
-            else if (cmd.includes('fact')) {
-                akiraSpeak("Data indicates that honey never spoils; it remains completely viable for thousands of years.");
-            }
-            else if (cmd.includes('motivate')) {
-                akiraSpeak("Sir, tracking telemetry shows your potential output matches peak engineering. Execute your code today.");
-            }
-            else if (cmd.includes('advice')) {
-                akiraSpeak("The most sound framework choice is to write clean structures and commit architectural parameters early.");
-            }
-            else if (cmd.includes('talk with me')) {
-                akiraSpeak("I am always online, Sir. Let's analyze data algorithms or configure development structures.");
-            }
-            else if (cmd.includes('know me')) {
-                akiraSpeak("You are the master developer operating under the core designation Treznor.");
-            }
-            else if (cmd.includes('created you') || cmd.includes('who made you')) {
-                akiraSpeak("I was meticulously designed and brought online by Treznor.");
-            }
-            else if (cmd.includes('what can you do')) {
-                akiraSpeak("I manage device integrations, run terminal automation parameters, browse web arrays, and adapt to multiple global languages seamlessly.");
-            }
-            else if (cmd.includes('ai') || cmd.includes('artificial intelligence')) {
-                akiraSpeak("Artificial Intelligence is a dynamic array of neural structures engineered to simulate logical cognitive execution.");
-            }
-            else if (cmd.includes('science')) {
-                akiraSpeak("Science is the empirical systematic tracking and architectural modeling of the universe.");
-            }
-            else if (cmd.includes('president')) {
-                akiraSpeak("Accessing global geopolitical registries. Please specify which localized government sector you are querying.");
-            }
-            else if (cmd.includes('elon musk')) {
-                akiraSpeak("Elon Musk is a tech entrepreneur managing aerospace, automotive engineering, and neural layer industries.");
-            }
-            else if (cmd.includes('space') || cmd.includes('universe')) {
-                akiraSpeak("Space is the vast, low-density continuum hosting astronomical objects across the cosmos.");
-            }
-
-            // --- HARDWARE INTERFACES & DEPLOYMENTS ---
-            else if (cmd.includes('camera') || cmd.includes('photo') || cmd.includes('video')) {
-                akiraSpeak("Accessing native media device camera tracks.");
-                window.open('https://google.github.io/web-starter-kit/', '_blank'); 
-            }
-            else if (cmd.includes('gallery')) {
-                akiraSpeak("Routing path to media data gallery.");
-            }
-            else if (cmd.includes('settings')) {
-                akiraSpeak("Launching device master environment settings UI layout.");
-            }
-            else if (cmd.includes('brightness')) {
-                akiraSpeak("Altering screen illumination constraint properties.");
-            }
-            else if (cmd.includes('wifi') || cmd.includes('bluetooth') || cmd.includes('hotspot') || cmd.includes('airplane mode')) {
-                if (navigator.vibrate) navigator.vibrate(150);
-                akiraSpeak(`Toggling target wireless networking hardware switches.`);
-            }
-            else if (cmd.includes('contacts') || cmd.includes('call')) {
-                akiraSpeak("Routing communication request directly via telephone handler interfaces.");
-            }
-            else if (cmd.includes('calculator')) {
-                akiraSpeak("Opening numerical parsing tool window.");
-                window.open('https://www.google.com/search?q=calculator', '_blank');
-            }
-            else if (cmd.includes('screenshot')) {
-                akiraSpeak("Capturing current view canvas buffer state parameters.");
-            }
-            else if (cmd.includes('lock') || cmd.includes('restart') || cmd.includes('shutdown phone')) {
-                akiraSpeak("Warning: Operating system security requires a native root app environment wrapper to force absolute power down procedures.");
-            }
-
-            // --- WEB SECTOR ROUTING PLATFORMS ---
-            else if (cmd.includes('search on google') || cmd.includes('search for')) {
-                const terms = cmd.replace('search on google','').replace('search for','').trim();
-                akiraSpeak(`Running database search for ${terms}.`);
-                window.open(`https://www.google.com/search?q=${encodeURIComponent(terms)}`, '_blank');
-            }
-            else if (cmd.includes('open google')) {
-                akiraSpeak("Opening Google engine.");
-                window.open('https://www.google.com', '_blank');
-            }
-            else if (cmd.includes('search youtube') || cmd.includes('open youtube')) {
-                const terms = cmd.replace('search youtube','').replace('open youtube','').trim();
-                akiraSpeak(`Opening YouTube streams.`);
-                window.open(terms ? `https://www.youtube.com/results?search_query=${encodeURIComponent(terms)}` : 'https://www.youtube.com', '_blank');
-            }
-            else if (cmd.includes('wikipedia')) {
-                window.open('https://www.wikipedia.org', '_blank');
-            }
-            else if (cmd.includes('gmail') || cmd.includes('email')) {
-                akiraSpeak("Accessing mail communication server.");
-                window.open('https://mail.google.com', '_blank');
-            }
-            else if (cmd.includes('twitter')) {
-                window.open('https://www.twitter.com', '_blank');
-            }
-            else if (cmd.includes('facebook')) {
-                window.open('https://www.facebook.com', '_blank');
-            }
-            else if (cmd.includes('instagram')) {
-                window.open('https://www.instagram.com', '_blank');
-            }
-            else if (cmd.includes('whatsapp')) {
-                window.open('https://web.whatsapp.com', '_blank');
-            }
-            else if (cmd.includes('chrome')) {
-                window.open('https://www.google.com/chrome', '_blank');
-            }
-            else if (cmd.includes('weather')) {
-                akiraSpeak("Querying climate tracking radar databases.");
-                window.open('https://www.google.com/search?q=weather', '_blank');
-            }
-            else if (cmd.includes('news') || cmd.includes('headlines')) {
-                akiraSpeak("Fetching global RSS index updates and headline strings.");
-                window.open('https://news.google.com', '_blank');
-            }
-            else if (cmd.includes('crypto') || cmd.includes('bitcoin') || cmd.includes('stock')) {
-                akiraSpeak("Syncing fiscal ledger tracking nodes.");
-                window.open('https://finance.yahoo.com', '_blank');
-            }
-
-            // --- STANDARD GREETINGS & SYSTEM TRIGGERS ---
-            else if (cmd.includes('hello') || cmd.includes('hi') || cmd.includes('hey') || cmd.includes('good morning') || cmd.includes('good afternoon') || cmd.includes('good evening') || cmd.includes('wake up') || cmd.includes('activate') || cmd.includes('online')) {
-                akiraSpeak(getLocalizedResponse('online'));
-            }
-            else if (cmd.includes('how are you') || cmd.includes('what are you doing')) {
-                akiraSpeak("Monitoring processing parameters and awaiting instructions.");
-            }
-            else if (cmd.includes('are you there')) {
-                akiraSpeak("Affirmative, Sir. Standing by on all interface endpoints.");
-            }
+        // Runaway Button Logic mapping specifically within safe container boundaries
+        function escapeFinger() {
+            const btn = document.getElementById('runawayBtn');
+            const container = document.getElementById('choiceContainer');
             
-            // --- CATCH-ALL QUERY ENGINE ---
-            else {
-                akiraSpeak(getLocalizedResponse('unknown'));
-                window.open(`https://www.google.com/search?q=${encodeURIComponent(cmd)}`, '_blank');
-            }
+            // Extract boundaries of active space
+            const maxX = container.clientWidth - btn.clientWidth;
+            // Allow vertical shifting up or down playfully inside viewport bounds
+            const maxY = 120; 
+
+            const targetX = Math.floor(Math.random() * maxX);
+            const targetY = Math.floor(Math.random() * maxY) - 60; // range between -60px to 60px
+
+            btn.style.left = `${targetX}px`;
+            btn.style.top = `${targetY}px`;
         }
 
-        if (SpeechSynthesis && SpeechSynthesis.onvoiceschanged !== undefined) {
-            SpeechSynthesis.onvoiceschanged = () => { SpeechSynthesis.getVoices(); };
+        function executeForgiveness() {
+            currentStep = 10;
+            updateUI();
+        }
+
+        // Particle Burst engine for beautiful visual feedback
+        function triggerBurstEffects() {
+            const body = document.body;
+            for (let i = 0; i < 60; i++) {
+                const particle = document.createElement('div');
+                particle.classList.add('sparkle');
+                
+                // Spawn coordinates from center
+                particle.style.left = '50%';
+                particle.style.top = '45%';
+                
+                // Randomize trajectory destinations
+                const angle = Math.random() * Math.PI * 2;
+                const distance = Math.random() * 180 + 70;
+                const tx = Math.cos(angle) * distance;
+                const ty = Math.sin(angle) * distance;
+                
+                particle.style.setProperty('--twx', `${tx}px`);
+                particle.style.setProperty('--twy', `${ty}px`);
+                
+                // Randomize colors between high contrast neon pink, purple, and cyan
+                const palette = ['#ff2a75', '#9d4edd', '#05d9e8', '#ffffff'];
+                particle.style.background = palette[Math.floor(Math.random() * palette.length)];
+                
+                body.appendChild(particle);
+                setTimeout(() => particle.remove(), 1500);
+            }
         }
     </script>
 </body>
